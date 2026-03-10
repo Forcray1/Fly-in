@@ -1,0 +1,2 @@
+class drone:
+    pass
