@@ -30,4 +30,3 @@ class Drone:
         if self.turns_to_arrival == 0 and self.in_transit_to is not None:
             self.current_zone = self.in_transit_to
             self.in_transit_to = None
-
