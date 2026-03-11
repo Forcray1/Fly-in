@@ -28,7 +28,7 @@ class Connexion:
         """
         Return a canonical key to detect duplicates like a-b and b-a.
         """
-        return tuple(sorted((self.zone_a, self.zone_b)))
+        return (min(self.zone_a, self.zone_b), max(self.zone_a, self.zone_b))
 
     def as_display_name(self) -> str:
         """
