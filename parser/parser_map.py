@@ -241,7 +241,6 @@ def parser(config: str) -> ParsedMap:
 
             if item in {"start_hub", "hub", "end_hub"}:
                 hub = _parse_hub(value, line_no, item)
-                info["hubs"].append(hub)
                 if item == "start_hub":
                     if info["start_hub"] is not None:
                         raise ValueError("Map contains multiple start_hub "
@@ -253,6 +252,7 @@ def parser(config: str) -> ParsedMap:
                                          "entries")
                     info["end_hub"] = hub
                 else:
+                    info["hubs"].append(hub)
                     info["hub"].append(hub)
                 continue
 
@@ -272,6 +272,8 @@ def parser(config: str) -> ParsedMap:
         raise ValueError("Map is missing 'end_hub' entry")
 
     known_zone_names: set[str] = {hub["name"] for hub in info["hubs"]}
+    known_zone_names.add(info["start_hub"]["name"])
+    known_zone_names.add(info["end_hub"]["name"])
     for connection in info["connections"]:
         if connection["from"] not in known_zone_names:
             raise ValueError(

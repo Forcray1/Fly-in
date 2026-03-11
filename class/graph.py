@@ -20,7 +20,11 @@ class Graph:
         """
         self.zones[zone.name] = zone
 
-    def add_connection(self, zone_a: str, zone_b: str, capacity: int = 1) -> None:
+    def add_connection(self,
+                       zone_a: str,
+                       zone_b: str,
+                       capacity: int = 1
+                       ) -> None:
         """
         Add a bidirectional connection between two known zones.
         """
@@ -42,4 +46,3 @@ class Graph:
         Return zone by name.
         """
         return self.zones[zone_name]
-
