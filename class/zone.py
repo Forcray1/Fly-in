@@ -1,5 +1,5 @@
 import math
-from dataclasses import dataclass, field
+from pydantic import BaseModel
 
 
 class ZoneType(str):
@@ -13,8 +13,7 @@ class ZoneType(str):
     BLOCKED = "blocked"
 
 
-@dataclass(slots=True)
-class Zone:
+class Zone(BaseModel):
     """
     A graph zone with optional metadata.
 
@@ -30,7 +29,6 @@ class Zone:
     max_drones: int = 1
     cost_to_next: int = 0
     cost_to_end: int = 0
-    connexion: dict = field(default_factory=dict)
     current_drones: int = 0
 
     def is_passable(self) -> bool:
@@ -119,18 +117,6 @@ class Zone:
         """
         return int(self.distance_to(end_hub))
 
-    def set_connexion(self, connexion_data: dict) -> None:
-        """
-        Set connection information for this zone.
-        """
-        self.connexion = connexion_data
-
-    def get_connexion(self) -> dict:
-        """
-        Get connection information for this zone.
-        """
-        return self.connexion
-
     def get_zone_type(self) -> str:
         """
         Get the zone type.
@@ -148,8 +134,7 @@ class Zone:
             "color": self.color,
             "max_drones": self.max_drones,
             "current_drones": self.current_drones,
-            "available_capacity": self.get_available_capacity(),
-            "connexion": self.connexion,
+            "available_capacity": self.get_available_capacity()
         }
 
     def validate(self) -> bool:

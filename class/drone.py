@@ -1,9 +1,8 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 from typing import Optional
 
 
-@dataclass(slots=True)
-class Drone:
+class Drone(BaseModel):
     """
     Represents one drone during simulation.
     """

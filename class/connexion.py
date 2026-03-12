@@ -1,9 +1,8 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 from typing import Tuple
 
 
-@dataclass(frozen=True, slots=True)
-class Connexion:
+class Connexion(BaseModel):
     """
     Bidirectional connection between two zones.
     """
@@ -13,7 +12,9 @@ class Connexion:
     max_link_capacity: int = 1
 
     def __post_init__(self) -> None:
-        """Validate connection constraints from the subject."""
+        """
+        Validate connection constraints from the subject.
+        """
         if not self.zone_a or not self.zone_b:
             raise ValueError("Connection zones must be non-empty")
         if "-" in self.zone_a or "-" in self.zone_b:
