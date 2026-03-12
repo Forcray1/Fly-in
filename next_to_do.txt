@@ -1,4 +1,3 @@
-parser le dossier de base tout stocker les infos
 créer la grid (peut etre avec DFS comme amazing a voir)
 améliorer les classes pour leurs donner toute les options possibles (par exemple pour drone, la fonction pour move)
 Une fois toute la base setup, algo de chemin le plus rapide de start a finish (BFS comme amazing surement, a voir si pas de mieux)
