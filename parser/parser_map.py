@@ -33,14 +33,11 @@ class ParsedMap(TypedDict):
     Complete parsed map payload.
     """
 
-    source: str
     nb_drones: int | None
     start_hub: HubData | None
     end_hub: HubData | None
     hubs: list[HubData]
     connections: list[ConnectionData]
-    hub: list[HubData]
-    connection: list[ConnectionData]
 
 
 class CordError(ValueError):
@@ -82,6 +79,8 @@ def check_spec(specs: str) -> dict[str, str]:
         key, value = token.split("=", 1)
         if not key or not value:
             raise SpecError(f"Invalid key/value in spec block: {token}")
+        if key.strip() in parsed:
+            raise SpecError(f"Duplicate key in spec block: '{key.strip()}'")
         parsed[key.strip()] = value.strip()
     return parsed
 
@@ -205,14 +204,13 @@ def parser(config: str) -> ParsedMap:
         raise FileNotFoundError(f"Map file not found: {config}")
 
     info: ParsedMap = {
-        "source": str(map_path),
         "nb_drones": None,
         "start_hub": None,
         "end_hub": None,
         "hubs": [],
         "connections": [],
-        "hub": [],
-        "connection": [],
+        "hub": [],  # for check_value, we need a total hub with start and end
+        "connection": [],  # maybe to delete don't know yet, keeping it in case
     }
 
     with map_path.open("r", encoding="utf-8") as f:
@@ -246,11 +244,13 @@ def parser(config: str) -> ParsedMap:
                         raise ValueError("Map contains multiple start_hub "
                                          "entries")
                     info["start_hub"] = hub
+                    info["hub"].append(hub)
                 elif item == "end_hub":
                     if info["end_hub"] is not None:
                         raise ValueError("Map contains multiple end_hub "
                                          "entries")
                     info["end_hub"] = hub
+                    info["hub"].append(hub)
                 else:
                     info["hubs"].append(hub)
                     info["hub"].append(hub)

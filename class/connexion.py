@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Tuple
+from typing import Tuple, Optional
 
 
 class Connexion(BaseModel):
@@ -7,9 +7,11 @@ class Connexion(BaseModel):
     Bidirectional connection between two zones.
     """
 
-    zone_a: str
-    zone_b: str
-    max_link_capacity: int = 1
+    def __init__(self, zone_a: str, zone_b: str, capacity: Optional[int] = 1):
+        self.name = "-".join(zone_a, zone_b)
+        self.zone_a: str = zone_a
+        self.zone_b: str = zone_b
+        self.max_link_capacity: int = capacity
 
     def __post_init__(self) -> None:
         """
@@ -31,8 +33,11 @@ class Connexion(BaseModel):
         """
         return (min(self.zone_a, self.zone_b), max(self.zone_a, self.zone_b))
 
-    def as_display_name(self) -> str:
+    def is_full(self, drones: int) -> bool:
         """
-        Return the connection formatted as <zone1>-<zone2>.
+        Check if the connexion is full
         """
-        return f"{self.zone_a}-{self.zone_b}"
+        if self.max_link_capacity == drones:
+            return True
+        else:
+            return False
