@@ -1,7 +1,8 @@
 from collections import defaultdict
 from typing import Dict, Set, Tuple
 
-from .zone import Zone
+from classes.connexion import Connexion
+from classes.zone import Zone
 
 
 class Graph:
@@ -14,26 +15,29 @@ class Graph:
         self.adjacency: Dict[str, Set[str]] = defaultdict(set)
         self.link_capacity: Dict[Tuple[str, str], int] = {}
 
-    def add_zone(self, zone: Zone) -> None:
+    def add_zone(self, zone) -> None:
         """
         Register a new zone by name.
         """
+        # Delayed import to avoid circular dependency
+        from classes.zone import Zone
+        if not isinstance(zone, Zone):
+            raise TypeError("zone must be a Zone instance")
         self.zones[zone.name] = zone
 
     def add_connection(self,
-                       zone_a: str,
-                       zone_b: str,
-                       capacity: int = 1
+                       connexion: Connexion
                        ) -> None:
         """
         Add a bidirectional connection between two known zones.
         """
-        if zone_a not in self.zones or zone_b not in self.zones:
+        if (connexion.zone_a not in self.zones or
+                connexion.zone_b not in self.zones):
             raise ValueError("Connection references an unknown zone")
-        self.adjacency[zone_a].add(zone_b)
-        self.adjacency[zone_b].add(zone_a)
-        self.link_capacity[(zone_a, zone_b)] = capacity
-        self.link_capacity[(zone_b, zone_a)] = capacity
+        self.adjacency[connexion.zone_a].add(connexion.zone_b)
+        self.adjacency[connexion.zone_b].add(connexion.zone_a)
+        self.link_capacity[(connexion.zone_a,
+                            connexion.zone_b)] = connexion.max_link_capacity
 
     def neighbors(self, zone_name: str) -> Set[str]:
         """

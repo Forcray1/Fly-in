@@ -1,5 +1,6 @@
-import math
 from pydantic import BaseModel
+
+from core.cost import cost_to_end, cost_to_next
 
 
 class ZoneType(str):
@@ -20,16 +21,36 @@ class Zone(BaseModel):
     Zones represent locations in the map. Connections between zones
     are managed by the Graph class, not stored here.
     """
-
     name: str
     x: int
     y: int
     zone_type: str = ZoneType.NORMAL
     color: str = "none"
     max_drones: int = 1
-    cost_to_next: int = 0
-    cost_to_end: int = 0
+    cost_to_next: int = 0  # a modifier pour implementer les couts
+    cost_to_end: int = 0  # a modifier pour implementer les couts
     current_drones: int = 0
+
+    @classmethod
+    def from_cords(
+        cls,
+        name: str,
+        cords: tuple,
+        zone_type: str = ZoneType.NORMAL,
+        color: str = "none",
+        max_drones: int = 1
+    ):
+        return cls(
+            name=name,
+            x=cords[0],
+            y=cords[1],
+            zone_type=zone_type,
+            color=color,
+            max_drones=max_drones,
+            cost_to_next=0,
+            cost_to_end=0,
+            current_drones=0
+        )
 
     def is_passable(self) -> bool:
         """
@@ -96,26 +117,6 @@ class Zone(BaseModel):
         Get the coordinates of this zone.
         """
         return (self.x, self.y)
-
-    def distance_to(self, other_zone: "Zone") -> float:
-        """
-        Calculate Euclidean distance to another zone.
-        """
-        dx = self.x - other_zone.x
-        dy = self.y - other_zone.y
-        return math.sqrt(dx * dx + dy * dy)
-
-    def calculate_cost_to_next(self, next_zone: "Zone") -> int:
-        """
-        Calculate the cost to reach next_zone.
-        """
-        return int(self.distance_to(next_zone))
-
-    def calculate_cost_to_end(self, end_hub: "Zone") -> int:
-        """
-        Calculate the cost from this zone to the end hub
-        """
-        return int(self.distance_to(end_hub))
 
     def get_zone_type(self) -> str:
         """
