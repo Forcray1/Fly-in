@@ -1,7 +1,5 @@
 from pydantic import BaseModel
 
-from core.cost import cost_to_end, cost_to_next
-
 
 class ZoneType(str):
     """

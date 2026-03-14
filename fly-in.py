@@ -6,6 +6,7 @@ from classes.connexion import Connexion
 #  from classes.drone import Drone
 from classes.zone import Zone
 from classes.graph import Graph
+from core.A_star import a_star
 
 
 def main():
@@ -51,6 +52,11 @@ def main():
     print(graph.adjacency)
     print("\n")
     print(graph.link_capacity)
+
+    start = infos["start_hub"]["name"]
+    goal = infos["end_hub"]["name"]
+    path = a_star(graph, start, goal)
+    print(f"\nChemin A* de {start} à {goal} : {path}")
 
 
 if __name__ == "__main__":
