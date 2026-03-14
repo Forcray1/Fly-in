@@ -1,4 +1,3 @@
-créer la grid (creer la grid avec les cords uniquement, pas comme amazing vu que si zone en 1,1, 0,1 et 0,0 mais pas en 1,0 on est douillé)
 améliorer les classes pour leurs donner toute les options possibles (par exemple pour drone, la fonction pour move)
 Une fois toute la base setup, algo de chemin le plus rapide de start a finish (BFS comme amazing surement, a voir si pas de mieux)
 
