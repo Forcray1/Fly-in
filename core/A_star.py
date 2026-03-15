@@ -33,8 +33,6 @@ def a_star(graph: Graph, start: Zone, goal: Zone) -> Optional[List[str]]:
             zone_obj = graph.zones[neighbor]
             if zone_obj.zone_type == "blocked":
                 continue
-            if not zone_obj.has_capacity():
-                continue
             cap = graph.link_capacity.get((current, neighbor))
             if cap is None:
                 cap = graph.link_capacity.get((neighbor, current))

@@ -1,11 +1,24 @@
-faire le global manager
-ajouter la visualisation quand tout le programme marche
+Programme marche mais optimisable (44 pour le challenge, perfect path sur tout les easy et medium, manque le perfect pour hard et challenge)
 
-Apprendre Time-Expanded Graph
+Ajouter la visualisation et le makefile sur les pc de 42 parce que les miens sont horrible pour dl pygame
 
-séparer par turn les positions actuelles et les positions au tour suivant, pour prendre en compte ou vont tout les drones avant de les
-faires se déplacer, donc pour chaque tour, les positions des drones actuellements, et leur positions au tour suivant, par exemple si
-D1 au start, on le déplace sur la connexion, et on marque la première zone comme +1 drone au tour suivant, etc...
+re-tester tout une fois que l'animation est finie
 
-gerer la logique d'attente sur la prochaine zone dans le global manager en fonction des zones occupée temporairement
+Proposition de l'IA pour optimisation:
 
+1. Gestion du goulet d’étranglement (bottleneck) :
+Assurez-vous que les 2 places du "bottleneck" sont toujours occupées dès que possible, sans temps mort.
+Les drones doivent arriver au "bottleneck" en file, sans attendre inutilement dans les hubs précédents.
+
+2. Répartition sur les "final_stretch" :
+Dès qu’un drone sort du "bottleneck", il doit choisir immédiatement un "final_stretch" libre pour ne pas bloquer les suivants.
+
+3. Anticipation des mouvements :
+Implémentez une file d’attente ou une logique de réservation pour que chaque drone sache à l’avance quand il pourra entrer dans le "bottleneck".
+Évitez que plusieurs drones attendent dans le même hub si cela ralentit la progression globale.
+
+4. Parallélisation maximale :
+Les drones doivent avancer à chaque tour si possible, même si cela implique de prendre des chemins alternatifs (ex : maze_b1 → maze_c1 → maze_c2) pour éviter les embouteillages.
+
+5. Priorisation intelligente :
+Priorisez l’envoi des drones les plus proches du "bottleneck" pour minimiser le temps d’attente global.
