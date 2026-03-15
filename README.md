@@ -22,6 +22,7 @@ Fly-in is a pathfinding and drone management simulation project. The goal is to 
 	- AI was used for code review about optimisation, only to tell wich way to go for research, and for repetitive task such as type hints
  
 # Algorithm Choices & Implementation Strategy
+
 - **Pathfinding:**
 	- The core uses the A* algorithm for optimal pathfinding, considering map constraints, bottlenecks, and drone capacities.
 	- Drones are managed in a queue system to maximize throughput at bottlenecks and avoid deadlocks.
@@ -35,4 +36,5 @@ Fly-in is a pathfinding and drone management simulation project. The goal is to 
 ...
 
 # Additional Information
+
 - For more details, see the in-code documentation and comments.
