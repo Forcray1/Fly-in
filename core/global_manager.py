@@ -50,20 +50,16 @@ def move_drone_base(drone: Drone, graph: Graph, reservations: set):
                 drone.finish = True
 
 
-def priority(drones: list[Drone], graph: Graph, goal: Zone) -> Drone:
+def priority(drones: list[Drone], graph: Graph, goal: Zone) -> list[Drone]:
     """
-    Return the drone with the less amount of moves to goal
+    Return the sorted list of priority within all of the drones
     """
-    candidates = [d for d in drones if not d.finish]
-    best_drone = min(
-        candidates,
-        key=lambda d: len(a_star(graph,
-                                 d.current_zone,
-                                 goal)) if a_star(graph,
-                                                  d.current_zone,
-                                                  goal) else float('inf')
-    )
-    return best_drone
+    def drone_priority_key(drone):
+        if drone.finish:
+            return (float('inf'), drone.drone_id)
+        path = a_star(graph, drone.current_zone, goal)
+        return (len(path) if path else float('inf'), drone.drone_id)
+    return sorted(drones, key=drone_priority_key)
 
 
 def finished(drones: list[Drone]) -> bool:
@@ -85,13 +81,15 @@ def global_manager(graph: Graph) -> int:
     nb_drones = len(graph.drones)
     PETIT_GRAPHE = nb_zones < 30 and nb_drones < 10
     turns = 0
+
     if PETIT_GRAPHE:
         paths_cache = {drone.drone_id: None for drone in graph.drones}
         while not finished(graph.drones):
             turns += 1
             moved = False
             reservations = set()
-            for drone in graph.drones:
+            sorted_drones = priority(graph.drones, graph, graph.end_hub)
+            for drone in sorted_drones:
                 if drone.finish:
                     continue
                 before_zone = drone.current_zone
@@ -105,7 +103,8 @@ def global_manager(graph: Graph) -> int:
             turns += 1
             moved = False
             reservations = set()
-            for drone in graph.drones:
+            sorted_drones = priority(graph.drones, graph, graph.end_hub)
+            for drone in sorted_drones:
                 if drone.finish:
                     continue
                 before_zone = drone.current_zone

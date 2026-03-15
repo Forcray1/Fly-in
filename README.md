@@ -20,7 +20,7 @@ Fly-in is a pathfinding and drone management simulation project. The goal is to 
 - [Graph Theory - GeeksforGeeks](https://www.geeksforgeeks.org/graph-data-structure-and-algorithms/)
 - **AI Usage:**
 	- AI was used for code review about optimisation, only to tell wich way to go for research, and for repetitive task such as type hints
-
+ 
 # Algorithm Choices & Implementation Strategy
 - **Pathfinding:**
 	- The core uses the A* algorithm for optimal pathfinding, considering map constraints, bottlenecks, and drone capacities.
