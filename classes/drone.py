@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 
+from .connexion import Connexion
 from .zone import Zone
 
 
@@ -9,7 +10,7 @@ class Drone(BaseModel):
     Represents one drone during simulation.
     """
     drone_id: int
-    current_zone: Zone
+    current_zone: Zone | Connexion
     finish: bool = False
     in_transit_to: Optional[str] = None
     turns_to_arrival: int = 0

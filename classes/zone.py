@@ -15,9 +15,6 @@ class ZoneType(str):
 class Zone(BaseModel):
     """
     A graph zone with optional metadata.
-
-    Zones represent locations in the map. Connections between zones
-    are managed by the Graph class, not stored here.
     """
     name: str
     x: int

@@ -1,4 +1,7 @@
 def check_value(config: dict) -> bool:
+    """
+    Verify if each value parsed is correct
+    """
     try:
         hub_names = [hub["name"] for hub in config["hub"]]
         for co in config["connections"]:

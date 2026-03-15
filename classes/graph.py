@@ -8,13 +8,14 @@ from classes.drone import Drone
 
 class Graph:
     """
-    Stores zones and bidirectional connections with capacities.
+    Stores zones, bidirectional connections with capacities,
+    and the list of drones.
     """
 
     def __init__(self) -> None:
         self.zones: Dict[str, Zone] = {}
-        self.start_hub = None  # Nom ou objet du hub de départ
-        self.end_hub = None    # Nom ou objet du hub d'arrivée
+        self.start_hub: Zone = None
+        self.end_hub: Zone = None
         self.adjacency: Dict[str, Set[str]] = defaultdict(set)
         self.link_capacity: Dict[Tuple[str, str], int] = {}
         self.drones: list[Drone] = []

@@ -1,4 +1,11 @@
-améliorer les classes pour leurs donner toute les options possibles (par exemple pour drone, la fonction pour move)
-Une fois toute la base setup, algo de chemin le plus rapide de start a finish (BFS comme amazing surement, a voir si pas de mieux)
+faire le global manager
+ajouter la visualisation quand tout le programme marche
 
-Apprendre algo A* et Time-Expanded Graph
+Apprendre Time-Expanded Graph
+
+séparer par turn les positions actuelles et les positions au tour suivant, pour prendre en compte ou vont tout les drones avant de les
+faires se déplacer, donc pour chaque tour, les positions des drones actuellements, et leur positions au tour suivant, par exemple si
+D1 au start, on le déplace sur la connexion, et on marque la première zone comme +1 drone au tour suivant, etc...
+
+gerer la logique d'attente sur la prochaine zone dans le global manager en fonction des zones occupée temporairement
+

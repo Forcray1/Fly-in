@@ -3,17 +3,17 @@ from classes.zone import Zone
 from typing import List, Dict, Optional
 
 
-def a_star(graph: Graph, start: str, goal: str) -> Optional[List[str]]:
+def a_star(graph: Graph, start: Zone, goal: Zone) -> Optional[List[str]]:
     """
     Find the shortest path from start to goal using the A* algorithm.
     Returns a list of zone names representing the path.
     """
-    open_set = [(start, 0)]
+    open_set = [(start.name, 0)]
     came_from = {}
     g_score = {zone: float('inf') for zone in graph.zones}
-    g_score[start] = 0
+    g_score[start.name] = 0
     f_score = {zone: float('inf') for zone in graph.zones}
-    f_score[start] = heuristic(graph.zones[start], graph.zones[goal])
+    f_score[start.name] = heuristic(start, goal)
     closed_set = set()
 
     while open_set:
@@ -24,7 +24,7 @@ def a_star(graph: Graph, start: str, goal: str) -> Optional[List[str]]:
         else:
             current, _ = min(open_set, key=lambda x: f_score[x[0]])
         open_set = [item for item in open_set if item[0] != current]
-        if current == goal:
+        if current == goal.name:
             return reconstruct_path(came_from, current)
         closed_set.add(current)
         for neighbor in get_neighbors(graph, current):
@@ -40,7 +40,8 @@ def a_star(graph: Graph, start: str, goal: str) -> Optional[List[str]]:
                 cap = graph.link_capacity.get((neighbor, current))
             if cap is not None and cap <= 0:
                 continue
-            if neighbor != goal and len(get_neighbors(graph, neighbor)) == 1:
+            if neighbor != goal.name and len(get_neighbors(graph,
+                                                           neighbor)) == 1:
                 continue
             tentative_g_score = g_score[current] + cost(graph,
                                                         current,
@@ -50,7 +51,7 @@ def a_star(graph: Graph, start: str, goal: str) -> Optional[List[str]]:
                 g_score[neighbor] = tentative_g_score
                 f_score[neighbor] = tentative_g_score + heuristic(
                     graph.zones[neighbor],
-                    graph.zones[goal])
+                    goal)
                 if neighbor not in [item[0] for item in open_set]:
                     open_set.append((neighbor, f_score[neighbor]))
     return None

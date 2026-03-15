@@ -7,6 +7,7 @@ from classes.drone import Drone
 from classes.zone import Zone
 from classes.graph import Graph
 from core.A_star import a_star
+from core.global_manager import global_manager
 
 
 def main():
@@ -57,10 +58,10 @@ def main():
     print("\n")
     print(graph.link_capacity)
 
-    start = infos["start_hub"]["name"]
-    goal = infos["end_hub"]["name"]
+    start = graph.start_hub
+    goal = graph.end_hub
     path = a_star(graph, start, goal)
-    print(f"\nChemin A* de {start} à {goal} : {path}")
+    print(f"\nChemin A* de {start.name} à {goal.name} : {path}")
 
     i = int(infos["nb_drones"])
     d_id = 0
@@ -68,9 +69,15 @@ def main():
         d_id += 1
         drone = Drone(drone_id=d_id, current_zone=graph.start_hub)
         graph.drones.append(drone)
+        graph.start_hub.current_drones.append(drone)
     print(f"\ncreated drones supposed {infos["nb_drones"]}:")
     for drone in graph.drones:
         print(drone)
+    turns = global_manager(graph)
+    if all(drone.finish for drone in graph.drones):
+        print(f"All the drones made it to the goal in {turns} moves !!")
+    else:
+        print("Certains drones n'ont pas atteint le goal.")
 
 
 if __name__ == "__main__":
