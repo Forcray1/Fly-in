@@ -25,9 +25,7 @@ class Zone(BaseModel):
     zone_type: str = ZoneType.NORMAL
     color: str = "none"
     max_drones: int = 1
-    cost_to_next: int = 0  # a modifier pour implementer les couts
-    cost_to_end: int = 0  # a modifier pour implementer les couts
-    current_drones: int = 0
+    current_drones: list = []
 
     @classmethod
     def from_cords(
@@ -45,9 +43,7 @@ class Zone(BaseModel):
             zone_type=zone_type,
             color=color,
             max_drones=max_drones,
-            cost_to_next=0,
-            cost_to_end=0,
-            current_drones=0
+            current_drones=[]
         )
 
     def is_passable(self) -> bool:
@@ -78,37 +74,41 @@ class Zone(BaseModel):
         """
         Check if there is available capacity for another drone.
         """
-        return self.current_drones < self.max_drones
+        return len(self.current_drones) < self.max_drones
 
     def get_available_capacity(self) -> int:
         """
         Get the number of available drone slots.
         """
-        return max(0, self.max_drones - self.current_drones)
+        return max(0, self.max_drones - len(self.current_drones))
 
-    def add_drone(self, drone_id: int) -> bool:
+    def add_drone(self, drone) -> bool:
         """
         Add a drone to this zone.
         """
+        from .drone import Drone
+        if not isinstance(drone, Drone):
+            raise TypeError("drone must be a Drone instance")
         if self.has_capacity():
-            self.current_drones += 1
+            self.current_drones.append(drone)
             return True
         return False
 
     def remove_drone(self, drone_id: int) -> bool:
         """
-        Remove a drone from this zone.
+        Remove a drone from this zone by id.
         """
-        if self.current_drones > 0:
-            self.current_drones -= 1
-            return True
+        for drone in self.current_drones:
+            if getattr(drone, 'drone_id', None) == drone_id:
+                self.current_drones.remove(drone)
+                return True
         return False
 
     def get_drone_count(self) -> int:
         """
         Get the number of drones currently in this zone.
         """
-        return self.current_drones
+        return len(self.current_drones)
 
     def get_position(self) -> tuple:
         """
@@ -146,7 +146,8 @@ class Zone(BaseModel):
             and isinstance(self.x, int)
             and isinstance(self.y, int)
             and self.max_drones > 0
-            and 0 <= self.current_drones <= self.max_drones
+            and isinstance(self.current_drones, list)
+            and 0 <= len(self.current_drones) <= self.max_drones
             and self.zone_type in [
                 ZoneType.NORMAL,
                 ZoneType.RESTRICTED,
@@ -159,7 +160,7 @@ class Zone(BaseModel):
         """
         Reset the zone to its initial state.
         """
-        self.current_drones = 0
+        self.current_drones = []
         self.cost_to_next = 0
         self.cost_to_end = 0
 
@@ -170,5 +171,5 @@ class Zone(BaseModel):
         return (
             f"Zone(name={self.name}, pos=({self.x}, {self.y}), "
             f"type={self.zone_type}, "
-            f"drones={self.current_drones}/{self.max_drones})"
+            f"drones={len(self.current_drones)}/{self.max_drones})"
         )

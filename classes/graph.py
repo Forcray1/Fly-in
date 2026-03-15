@@ -3,6 +3,7 @@ from typing import Dict, Set, Tuple
 
 from classes.connexion import Connexion
 from classes.zone import Zone
+from classes.drone import Drone
 
 
 class Graph:
@@ -12,14 +13,16 @@ class Graph:
 
     def __init__(self) -> None:
         self.zones: Dict[str, Zone] = {}
+        self.start_hub = None  # Nom ou objet du hub de départ
+        self.end_hub = None    # Nom ou objet du hub d'arrivée
         self.adjacency: Dict[str, Set[str]] = defaultdict(set)
         self.link_capacity: Dict[Tuple[str, str], int] = {}
+        self.drones: list[Drone] = []
 
     def add_zone(self, zone) -> None:
         """
         Register a new zone by name.
         """
-        # Delayed import to avoid circular dependency
         from classes.zone import Zone
         if not isinstance(zone, Zone):
             raise TypeError("zone must be a Zone instance")

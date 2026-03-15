@@ -3,7 +3,7 @@ import sys
 from parser.parser_map import parser
 from parser.check_value import check_value
 from classes.connexion import Connexion
-#  from classes.drone import Drone
+from classes.drone import Drone
 from classes.zone import Zone
 from classes.graph import Graph
 from core.A_star import a_star
@@ -38,6 +38,10 @@ def main():
                 max_drones=hub.get("max_drones", 1),
             )
             graph.add_zone(zone)
+            if hub == infos["start_hub"]:
+                graph.start_hub = zone
+            if hub == infos["end_hub"]:
+                graph.end_hub = zone
 
     for connection in infos["connections"]:
         co = Connexion.create(
@@ -57,6 +61,16 @@ def main():
     goal = infos["end_hub"]["name"]
     path = a_star(graph, start, goal)
     print(f"\nChemin A* de {start} à {goal} : {path}")
+
+    i = int(infos["nb_drones"])
+    d_id = 0
+    while d_id < i:
+        d_id += 1
+        drone = Drone(drone_id=d_id, current_zone=graph.start_hub)
+        graph.drones.append(drone)
+    print(f"\ncreated drones supposed {infos["nb_drones"]}:")
+    for drone in graph.drones:
+        print(drone)
 
 
 if __name__ == "__main__":

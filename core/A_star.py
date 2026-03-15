@@ -14,6 +14,7 @@ def a_star(graph: Graph, start: str, goal: str) -> Optional[List[str]]:
     g_score[start] = 0
     f_score = {zone: float('inf') for zone in graph.zones}
     f_score[start] = heuristic(graph.zones[start], graph.zones[goal])
+    closed_set = set()
 
     while open_set:
         priority_zones = [item for item in open_set if
@@ -25,16 +26,21 @@ def a_star(graph: Graph, start: str, goal: str) -> Optional[List[str]]:
         open_set = [item for item in open_set if item[0] != current]
         if current == goal:
             return reconstruct_path(came_from, current)
+        closed_set.add(current)
         for neighbor in get_neighbors(graph, current):
-            if graph.zones[neighbor].zone_type == "blocked":
+            if neighbor in closed_set:
                 continue
             zone_obj = graph.zones[neighbor]
+            if zone_obj.zone_type == "blocked":
+                continue
             if not zone_obj.has_capacity():
                 continue
             cap = graph.link_capacity.get((current, neighbor))
             if cap is None:
                 cap = graph.link_capacity.get((neighbor, current))
             if cap is not None and cap <= 0:
+                continue
+            if neighbor != goal and len(get_neighbors(graph, neighbor)) == 1:
                 continue
             tentative_g_score = g_score[current] + cost(graph,
                                                         current,
