@@ -11,7 +11,7 @@ def move_drone_cache(drone: Drone,
                      paths_cache: dict
                      ):
     """
-    Version optimisée avec cache de chemin.
+    optimised version for smaller ones, wich keep the cache of A*
     """
     if drone.finish:
         return
@@ -56,7 +56,7 @@ def move_drone_cache(drone: Drone,
 
 def move_drone_base(drone: Drone, graph: Graph, reservations: dict):
     """
-    Version de base : recalcule A* à chaque tour.
+    Classic version, wich recalculate A* for each move
     """
     if drone.finish:
         return
@@ -111,8 +111,7 @@ def finished(drones: list[Drone]) -> bool:
 
 def global_manager(graph: Graph) -> tuple[int, list]:
     """
-    Choisit dynamiquement la meilleure stratégie selon la taille
-    du graphe et du nombre de drones.
+    Chose the best strategy based on the graph and number of drones
     """
     nb_zones = len(graph.zones)
     nb_drones = len(graph.drones)

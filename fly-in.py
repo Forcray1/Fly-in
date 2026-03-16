@@ -45,8 +45,9 @@ def main():
 
         for connection in infos["connections"]:
             co = Connexion.create(
-                connection["from"],
-                connection["to"]
+                connection["from_"],
+                connection["to"],
+                max_link_capacity=connection["max_link_capacity"]
             )
             graph.add_connection(co)
         print("\nGraph infos\n")

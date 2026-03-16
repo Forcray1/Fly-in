@@ -6,7 +6,6 @@ class HubData(TypedDict):
     """
     Normalized representation of one hub line.
     """
-
     kind: Literal["start_hub", "hub", "end_hub"]
     name: str
     x: int
@@ -17,14 +16,14 @@ class HubData(TypedDict):
     spec: dict[str, str]
 
 
-ConnectionData = TypedDict(
-    "ConnectionData",
-    {
-        "from": str,
-        "to": str,
-        "spec": dict[str, str],
-    },
-)
+class ConnectionData(TypedDict):
+    """
+    Normalized representation of one connection line.
+    """
+    from_: str
+    to: str
+    max_link_capacity: int
+    spec: dict[str, str]
 
 
 class ParsedMap(TypedDict):
@@ -55,7 +54,7 @@ class SpecError(ValueError):
 
 
 SUPPORTED_HUB_SPEC_KEYS: set[str] = {"color", "max_drones", "zone"}
-SUPPORTED_CONNECTION_SPEC_KEYS: set[str] = set()
+SUPPORTED_CONNECTION_SPEC_KEYS: set[str] = {"max_link_capacity"}
 
 
 def check_spec(specs: str) -> dict[str, str]:
@@ -175,9 +174,35 @@ def _parse_connection(line_value: str, line_no: int) -> ConnectionData:
             raise SpecError(f"Line {line_no}: unsupported connection "
                             f"spec key '{key}'")
 
+    max_link_capacity = None
+    if "max_link_capacity" in spec:
+        try:
+            max_link_capacity = int(spec["max_link_capacity"])
+        except Exception:
+            max_link_capacity = None
+    nb_drones = None
+    import inspect
+    frame = inspect.currentframe()
+    while frame:
+        if "info" in frame.f_locals and "nb_drones" in frame.f_locals["info"]:
+            nb_drones = frame.f_locals["info"]["nb_drones"]
+            break
+        frame = frame.f_back
+    if nb_drones is not None:
+        try:
+            nb_drones = int(nb_drones)
+        except Exception:
+            nb_drones = 1
+    if (
+        max_link_capacity is None
+        or (nb_drones is not None and max_link_capacity < nb_drones)
+    ):
+        max_link_capacity = nb_drones if nb_drones is not None else 1
+        spec["max_link_capacity"] = str(max_link_capacity)
     return {
-        "from": zone_a,
+        "from_": zone_a,
         "to": zone_b,
+        "max_link_capacity": max_link_capacity,
         "spec": spec,
     }
 
@@ -197,33 +222,42 @@ def parser(config: str) -> dict:
         "end_hub": None,
         "hubs": [],
         "connections": [],
-        "hub": [],  # for check_value, we need a total hub with start and end
+        "hub": [],
     }
 
     with map_path.open("r", encoding="utf-8") as f:
-        for line_no, raw_line in enumerate(f, start=1):
+        nb_drones_value = None
+        lines = list(f)
+        for line_no, raw_line in enumerate(lines, start=1):
             line = raw_line.strip()
             if not line or line.startswith("#"):
                 continue
-
+            if ":" not in line:
+                continue
+            item, value = line.split(":", 1)
+            item = item.strip()
+            value = value.strip()
+            if item == "nb_drones":
+                try:
+                    nb_drones_value = int(value)
+                except ValueError as exc:
+                    raise ValueError(
+                        f"Line {line_no}: nb_drones must be an integer"
+                    ) from exc
+                if nb_drones_value <= 0:
+                    raise ValueError(f"Line {line_no}: nb_drones must be > 0")
+                info["nb_drones"] = nb_drones_value
+        for line_no, raw_line in enumerate(lines, start=1):
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
             if ":" not in line:
                 raise ValueError(f"Line {line_no}: missing ':' separator")
             item, value = line.split(":", 1)
             item = item.strip()
             value = value.strip()
-
             if item == "nb_drones":
-                try:
-                    nb_drones = int(value)
-                except ValueError as exc:
-                    raise ValueError(
-                        f"Line {line_no}: nb_drones must be an integer"
-                    ) from exc
-                if nb_drones <= 0:
-                    raise ValueError(f"Line {line_no}: nb_drones must be > 0")
-                info["nb_drones"] = nb_drones
                 continue
-
             if item in {"start_hub", "hub", "end_hub"}:
                 from typing import cast
                 hub = _parse_hub(
@@ -238,12 +272,34 @@ def parser(config: str) -> dict:
                     if info["start_hub"] is not None:
                         raise ValueError("Map contains multiple start_hub "
                                          "entries")
+                    if (
+                        nb_drones_value is not None
+                        and hub["max_drones"] < nb_drones_value
+                    ):
+                        raise ValueError("Start hub doesn't have the capacity "
+                                         "to handle all the drones")
+                    if nb_drones_value is not None and (
+                        ("max_drones" not in hub["spec"])
+                    ):
+                        hub["max_drones"] = nb_drones_value
+                        hub["spec"]["max_drones"] = str(nb_drones_value)
                     info["start_hub"] = hub
                     info["hub"].append(hub)
                 elif item == "end_hub":
                     if info["end_hub"] is not None:
                         raise ValueError("Map contains multiple end_hub "
                                          "entries")
+                    if (
+                        nb_drones_value is not None
+                        and hub["max_drones"] < nb_drones_value
+                    ):
+                        raise ValueError("End hub doesn't have the capacity "
+                                         "to handle all the drones")
+                    if nb_drones_value is not None and (
+                        ("max_drones" not in hub["spec"])
+                    ):
+                        hub["max_drones"] = nb_drones_value
+                        hub["spec"]["max_drones"] = str(nb_drones_value)
                     info["end_hub"] = hub
                     info["hub"].append(hub)
                 else:
@@ -269,25 +325,12 @@ def parser(config: str) -> dict:
     known_zone_names.add(info["start_hub"]["name"])
     known_zone_names.add(info["end_hub"]["name"])
     for connection in info["connections"]:
-        if connection["from"] not in known_zone_names:
+        if connection["from_"] not in known_zone_names:
             raise ValueError(
-                f"Unknown zone in connection: {connection['from']}"
+                f"Unknown zone in connection: {connection['from_']}"
             )
         if connection["to"] not in known_zone_names:
             raise ValueError(f"Unknown zone in connection: {connection['to']}")
 
     result = {k: v for k, v in info.items() if v is not None}
     return result
-
-
-"""
-class ParsedMap(TypedDict):
-
-    nb_drones: int | None
-    start_hub: HubData | None
-    end_hub: HubData | None
-    hubs: list[HubData]
-    connections: list[ConnectionData]
-    hub: list[HubData]
-
-"""

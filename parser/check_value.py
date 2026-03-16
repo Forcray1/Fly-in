@@ -6,7 +6,7 @@ def check_value(config: dict) -> bool:
         hub_names = [hub["name"] for hub in config["hub"]]
         for co in config["connections"]:
             if (
-                co["from"] not in hub_names
+                co["from_"] not in hub_names
                 or co["to"] not in hub_names
             ):
                 raise ValueError(f"{co} isn't a valid connection")
