@@ -1,94 +1,78 @@
+from typing import List, Dict, Optional, Set
 from classes.graph import Graph
 from classes.zone import Zone
-from typing import List, Dict, Optional
-
-
-def a_star(graph: Graph, start: Zone, goal: Zone) -> Optional[List[str]]:
-    """
-    Find the shortest path from start to goal using the A* algorithm.
-    Returns a list of zone names representing the path.
-    """
-    open_set = [(start.name, 0)]
-    came_from = {}
-    g_score = {zone: float('inf') for zone in graph.zones}
-    g_score[start.name] = 0
-    f_score = {zone: float('inf') for zone in graph.zones}
-    f_score[start.name] = heuristic(start, goal)
-    closed_set = set()
-
-    while open_set:
-        priority_zones = [(zone_name, score) for (zone_name, score) in open_set
-                          if graph.zones[zone_name].zone_type == "priority"]
-        if priority_zones:
-            current_tuple = min(priority_zones, key=lambda x: f_score[x[0]])
-        else:
-            current_tuple = min(open_set, key=lambda x: f_score[x[0]])
-        current = current_tuple[0]
-        open_set = [item for item in open_set if item[0] != current]
-        if current == goal.name:
-            return reconstruct_path(came_from, current)
-        closed_set.add(current)
-        for neighbor in get_neighbors(graph, current):
-            if neighbor in closed_set:
-                continue
-            zone_obj = graph.zones[neighbor]
-            if zone_obj.zone_type == "blocked":
-                continue
-            if zone_obj.is_full():
-                continue
-            if neighbor != goal.name and len(get_neighbors(graph,
-                                                           neighbor)) == 1:
-                continue
-            tentative_g_score = g_score[current] + cost(graph,
-                                                        current,
-                                                        neighbor)
-            if tentative_g_score < g_score[neighbor]:
-                came_from[neighbor] = current
-                g_score[neighbor] = tentative_g_score
-                f_score[neighbor] = tentative_g_score + heuristic(
-                    graph.zones[neighbor],
-                    goal)
-                if neighbor not in [item[0] for item in open_set]:
-                    open_set.append((neighbor, f_score[neighbor]))
-    return None
 
 
 def heuristic(zone_a: Zone, zone_b: Zone) -> float:
     """
-    theorically the path to goal not taking acount of the roads
-    just the distance from point A to point B
+    Manhattan distance between two zones.
     """
-    return abs(zone_a.x - zone_b.x) + abs(zone_a.y - zone_b.y)
+    return float(abs(zone_a.x - zone_b.x) + abs(zone_a.y - zone_b.y))
 
 
 def reconstruct_path(came_from: Dict[str, str], current: str) -> List[str]:
     """
-    Reconstruct the path from the came_from map.
+    Reconstruct the path from the came_from dictionary.
     """
     path = [current]
     while current in came_from:
         current = came_from[current]
         path.append(current)
-    path.reverse()
-    return path
+    return path[::-1]
 
 
-def get_neighbors(graph: Graph, zone_name: str) -> List[str]:
+def a_star(
+    graph: Graph,
+    start: Zone,
+    goal: Zone,
+    global_occ: Dict[str, int]
+) -> Optional[List[str]]:
     """
-    Return the list of neighbor zone names for a given zone.
+    A* algorithm adapted for Fly-in constraints.
+    Takes into account zone costs and global density.
     """
-    return list(graph.adjacency.get(zone_name, []))
+    open_set: Set[str] = {start.name}
+    came_from: Dict[str, str] = {}
 
+    g_score = {name: float('inf') for name in graph.zones}
+    g_score[start.name] = 0.0
 
-def cost(graph: Graph, from_zone: str, to_zone: str) -> float:
-    """
-    Return the cost of moving from from_zone to to_zone
-    (e.g., based on link capacity, zone type, etc.).
-    """
-    zone = graph.zones[to_zone]
-    if zone.is_full():
-        return float('inf')
-    base_cost = 1.0
-    if zone.zone_type == "restricted":
-        base_cost *= 2
-    return base_cost
+    f_score = {name: float('inf') for name in graph.zones}
+    f_score[start.name] = heuristic(start, goal)
+
+    while open_set:
+        # Selection of lowest f-node
+        current_name = min(open_set, key=lambda n: f_score[n])
+
+        if current_name == goal.name:
+            return reconstruct_path(came_from, current_name)
+
+        open_set.remove(current_name)
+
+        for neighbor_name in graph.neighbors(current_name):
+            neighbor_zone = graph.get_zone(neighbor_name)
+
+            if neighbor_zone.zone_type == "blocked":
+                continue
+
+            # Base cost
+            if neighbor_zone.zone_type == "restricted":
+                move_cost = 2.0
+            elif neighbor_zone.zone_type == "priority":
+                move_cost = 0.8
+            else:
+                move_cost = 1.0
+
+            density_penalty = global_occ.get(neighbor_name, 0) * 0.6
+
+            tentative_g = g_score[current_name] + move_cost + density_penalty
+
+            if tentative_g < g_score[neighbor_name]:
+                came_from[neighbor_name] = current_name
+                g_score[neighbor_name] = tentative_g
+                f_score[neighbor_name] = (
+                    tentative_g + heuristic(neighbor_zone, goal)
+                )
+                open_set.add(neighbor_name)
+
+    return None

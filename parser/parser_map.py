@@ -272,12 +272,6 @@ def parser(config: str) -> dict:
                     if info["start_hub"] is not None:
                         raise ValueError("Map contains multiple start_hub "
                                          "entries")
-                    if (
-                        nb_drones_value is not None
-                        and hub["max_drones"] < nb_drones_value
-                    ):
-                        raise ValueError("Start hub doesn't have the capacity "
-                                         "to handle all the drones")
                     if nb_drones_value is not None and (
                         ("max_drones" not in hub["spec"])
                     ):
@@ -285,16 +279,16 @@ def parser(config: str) -> dict:
                         hub["spec"]["max_drones"] = str(nb_drones_value)
                     info["start_hub"] = hub
                     info["hub"].append(hub)
-                elif item == "end_hub":
-                    if info["end_hub"] is not None:
-                        raise ValueError("Map contains multiple end_hub "
-                                         "entries")
                     if (
                         nb_drones_value is not None
                         and hub["max_drones"] < nb_drones_value
                     ):
-                        raise ValueError("End hub doesn't have the capacity "
+                        raise ValueError("Start hub doesn't have the capacity "
                                          "to handle all the drones")
+                elif item == "end_hub":
+                    if info["end_hub"] is not None:
+                        raise ValueError("Map contains multiple end_hub "
+                                         "entries")
                     if nb_drones_value is not None and (
                         ("max_drones" not in hub["spec"])
                     ):
@@ -302,6 +296,12 @@ def parser(config: str) -> dict:
                         hub["spec"]["max_drones"] = str(nb_drones_value)
                     info["end_hub"] = hub
                     info["hub"].append(hub)
+                    if (
+                        nb_drones_value is not None
+                        and hub["max_drones"] < nb_drones_value
+                    ):
+                        raise ValueError("End hub doesn't have the capacity "
+                                         "to handle all the drones")
                 else:
                     info["hubs"].append(hub)
                     info["hub"].append(hub)

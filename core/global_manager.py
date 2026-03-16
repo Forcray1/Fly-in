@@ -1,159 +1,113 @@
-
+from copy import deepcopy
+from typing import Dict, List, Tuple, Any
 from classes.graph import Graph
-from classes.drone import Drone
-from classes.zone import Zone
 from core.A_star import a_star
 
 
-def move_drone_cache(drone: Drone,
-                     graph: Graph,
-                     reservations: dict,
-                     paths_cache: dict
-                     ):
-    """
-    optimised version for smaller ones, wich keep the cache of A*
-    """
-    if drone.finish:
-        return
-    path = paths_cache.get(drone.drone_id)
-    if not path or drone.current_zone.name != path[0]:
-        assert graph.end_hub is not None, "end_hub should not be None"
-        if isinstance(drone.current_zone, Zone):
-            path = a_star(graph, drone.current_zone, graph.end_hub)
-        else:
-            path = None
-        paths_cache[drone.drone_id] = path
-    if path and len(path) > 1:
-        next_zone_name = path[1]
-        if (
-            next_zone_name not in reservations
-            or reservations.get(next_zone_name) == drone.drone_id
-        ):
-            if graph.zones[next_zone_name].is_full():
-                reservations[next_zone_name] = drone.drone_id
-            if (
-                isinstance(drone.current_zone, Zone)
-                and hasattr(drone.current_zone, "current_drones")
-                and drone in drone.current_zone.current_drones
-            ):
-                drone.current_zone.current_drones.remove(drone)
-            drone.current_zone = graph.zones[next_zone_name]
-            if (
-                next_zone_name in reservations
-                and reservations[next_zone_name] == drone.drone_id
-            ):
-                del reservations[next_zone_name]
-            if (
-                isinstance(drone.current_zone, Zone)
-                and hasattr(drone.current_zone, "current_drones")
-            ):
-                drone.current_zone.current_drones.append(drone)
-            assert graph.end_hub is not None, "end_hub should not be None"
-            if next_zone_name == graph.end_hub.name:
-                drone.finish = True
-                paths_cache[drone.drone_id] = None
+class SimulationManager:
+    def __init__(self, graph: Graph):
+        self.graph = graph
+        self.paths_cache: Dict[int, List[str]] = {}
+        self.global_occ: Dict[str, int] = {
+            name: 0 for name in graph.zones
+        }
+        self.turns = 0
 
+    def run_simulation(self) -> Tuple[int, List[Any]]:
+        """
+        Run the simulation and return (number_of_turns, list_of_steps).
+        """
+        steps = []
 
-def move_drone_base(drone: Drone, graph: Graph, reservations: dict):
-    """
-    Classic version, wich recalculate A* for each move
-    """
-    if drone.finish:
-        return
-    assert graph.end_hub is not None, "end_hub should not be None"
-    path = a_star(graph, drone.current_zone, graph.end_hub)
-    if path and len(path) > 1:
-        next_zone_name = path[1]
-        if (
-            next_zone_name not in reservations
-            or reservations.get(next_zone_name) == drone.drone_id
-        ):
-            reservations[next_zone_name] = drone.drone_id
-            if (
-                isinstance(drone.current_zone, Zone)
-                and hasattr(drone.current_zone, "current_drones")
-                and drone in drone.current_zone.current_drones
-            ):
-                drone.current_zone.current_drones.remove(drone)
-            drone.current_zone = graph.zones[next_zone_name]
-            if (
-                next_zone_name in reservations
-                and reservations[next_zone_name] == drone.drone_id
-            ):
-                del reservations[next_zone_name]
-            drone.current_zone.current_drones.append(drone)
-            assert graph.end_hub is not None, "end_hub should not be None"
-            if next_zone_name == graph.end_hub.name:
-                drone.finish = True
+        steps.append(deepcopy(self.graph.drones))
 
+        while not (
+                   all(d.finish for d in self.graph.drones)
+                   and self.turns < 2000
+                   ):
+            self.turns += 1
+            turn_movements: List[str] = []
+            res_zones: Dict[str, int] = {}
+            res_links: Dict[Tuple[str, str], int] = {}
 
-def priority(drones: list[Drone], graph: Graph, goal: Zone) -> list[Drone]:
-    """
-    Return the sorted list of priority within all of the drones
-    """
-    def drone_priority_key(drone):
-        if drone.finish:
-            return (float('inf'), drone.drone_id)
-        path = a_star(graph, drone.current_zone, goal)
-        return (len(path) if path else float('inf'), drone.drone_id)
-    return sorted(drones, key=drone_priority_key)
+            # 1. Arrival of drones in transit (Restricted management)
+            for drone in self.graph.drones:
+                if not drone.finish and drone.turns_to_arrival > 0:
+                    drone.turns_to_arrival -= 1
+                    if drone.turns_to_arrival == 0:
+                        dest_name = drone.in_transit_to
+                        dest_zone = self.graph.get_zone(dest_name)
+                        drone.current_zone = dest_zone
+                        dest_zone.add_drone(drone)
+                        turn_movements.append(f"D{drone.drone_id}-{dest_name}")
+                        if dest_name == self.graph.end_hub.name:
+                            drone.finish = True
+                        drone.in_transit_to = None
 
+            # 2. Planning and Movement
+            active_drones = [
+                d for d in self.graph.drones
+                if not d.finish and d.turns_to_arrival == 0
+            ]
+            # Sort to smooth traffic
+            active_drones.sort(key=lambda d: len(
+                a_star(
+                    self.graph, d.current_zone,
+                    self.graph.end_hub, self.global_occ
+                ) or []
+            ))
 
-def finished(drones: list[Drone]) -> bool:
-    """
-    Check if each drone is to the goal
-    """
-    for drone in drones:
-        if not drone.finish:
-            return False
-    return True
-
-
-def global_manager(graph: Graph) -> tuple[int, list]:
-    """
-    Chose the best strategy based on the graph and number of drones
-    """
-    nb_zones = len(graph.zones)
-    nb_drones = len(graph.drones)
-    PETIT_GRAPHE = nb_zones < 30 and nb_drones < 10
-    turns = 0
-    steps = []
-
-    if PETIT_GRAPHE:
-        from copy import deepcopy
-        paths_cache = {drone.drone_id: None for drone in graph.drones}
-        while not finished(graph.drones):
-            turns += 1
-            moved = False
-            reservations = dict()
-            assert graph.end_hub is not None, "end_hub should not be None"
-            sorted_drones = priority(graph.drones, graph, graph.end_hub)
-            for drone in sorted_drones:
-                if drone.finish:
+            for drone in active_drones:
+                path = a_star(
+                    self.graph, drone.current_zone,
+                    self.graph.end_hub, self.global_occ
+                )
+                if not path or len(path) < 2:
                     continue
-                before_zone = drone.current_zone
-                move_drone_cache(drone, graph, reservations, paths_cache)
-                if drone.current_zone != before_zone:
-                    moved = True
-            steps.append([deepcopy(d) for d in graph.drones])
-            if not moved:
-                break
-    else:
-        from copy import deepcopy
-        while not finished(graph.drones):
-            turns += 1
-            moved = False
-            reservations = dict()
-            assert graph.end_hub is not None, "end_hub should not be None"
-            sorted_drones = priority(graph.drones, graph, graph.end_hub)
-            for drone in sorted_drones:
-                if drone.finish:
+
+                next_name = path[1]
+                next_zone = self.graph.get_zone(next_name)
+                link_key = tuple(sorted([drone.current_zone.name, next_name]))
+
+                # Capacity check
+                conn_data = getattr(self.graph, 'connections_data', {})
+                conn_cap = conn_data.get(link_key, 1)
+                if res_links.get(link_key, 0) >= conn_cap:
                     continue
-                before_zone = drone.current_zone
-                move_drone_base(drone, graph, reservations)
-                if drone.current_zone != before_zone:
-                    moved = True
-            steps.append([deepcopy(d) for d in graph.drones])
-            if not moved:
-                break
-    return turns, steps
+
+                if next_name != self.graph.end_hub.name:
+                    count_in_zone = next_zone.get_drone_count()
+                    res_in_zone = res_zones.get(next_name, 0)
+                    if (count_in_zone + res_in_zone) >= next_zone.max_drones:
+                        continue
+
+                # Execute movement
+                drone.current_zone.remove_drone(drone.drone_id)
+                res_links[link_key] = res_links.get(link_key, 0) + 1
+                res_zones[next_name] = res_zones.get(next_name, 0) + 1
+                self.global_occ[next_name] += 1
+
+                if next_zone.zone_type == "restricted":
+                    drone.start_transit(next_name, 1)
+                    turn_movements.append(f"D{drone.drone_id}-{next_name}")
+                else:
+                    drone.current_zone = next_zone
+                    next_zone.add_drone(drone)
+                    turn_movements.append(f"D{drone.drone_id}-{next_name}")
+                    if next_name == self.graph.end_hub.name:
+                        drone.finish = True
+
+            if turn_movements:
+                print(" ".join(turn_movements))
+
+            steps.append(deepcopy(self.graph.drones))
+
+        return self.turns, steps
+
+
+def global_manager(graph: Graph) -> Tuple[int, List[Any]]:
+    """
+    Bridge function for main
+    """
+    manager = SimulationManager(graph)
+    return manager.run_simulation()

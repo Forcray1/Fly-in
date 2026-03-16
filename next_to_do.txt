@@ -1,28 +1,3 @@
-Programme marche mais optimisable (44 pour le challenge, perfect path sur tout les easy et medium, manque le perfect pour hard et challenge)
+Modifier le makefile sur les pc de 42 parce que les miens sont horrible
 
-remettre le max_link_capacity, et faire comme valeur par default si non preciser, le nb de drone
-
-Apres reverif, algo faux, il ne prend pas en compte les specifite des zones, et attend malgrer une zone de libre ce qui fais echouer sur le 01, et rajoute des tours en plus pour presaue tout les autres
-
-Ajouter le makefile sur les pc de 42 parce que les miens sont horrible pour dl pygame
-
-re-tester tout une fois que l'animation est finie
-
-Proposition de l'IA pour optimisation:
-
-1. Gestion du goulet d’étranglement (bottleneck) :
-Assurez-vous que les 2 places du "bottleneck" sont toujours occupées dès que possible, sans temps mort.
-Les drones doivent arriver au "bottleneck" en file, sans attendre inutilement dans les hubs précédents.
-
-2. Répartition sur les "final_stretch" :
-Dès qu’un drone sort du "bottleneck", il doit choisir immédiatement un "final_stretch" libre pour ne pas bloquer les suivants.
-
-3. Anticipation des mouvements :
-Implémentez une file d’attente ou une logique de réservation pour que chaque drone sache à l’avance quand il pourra entrer dans le "bottleneck".
-Évitez que plusieurs drones attendent dans le même hub si cela ralentit la progression globale.
-
-4. Parallélisation maximale :
-Les drones doivent avancer à chaque tour si possible, même si cela implique de prendre des chemins alternatifs (ex : maze_b1 → maze_c1 → maze_c2) pour éviter les embouteillages.
-
-5. Priorisation intelligente :
-Priorisez l’envoi des drones les plus proches du "bottleneck" pour minimiser le temps d’attente global.
+verifier toute les douilles possible sur la config de base
