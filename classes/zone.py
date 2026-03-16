@@ -133,9 +133,9 @@ class Zone(BaseModel):
             "available_capacity": self.get_available_capacity()
         }
 
-    def validate(self) -> bool:
+    def is_valid(self) -> bool:
         """
-        Validate that the zone has valid properties.
+        Check if the zone has valid properties.
         """
         return (
             isinstance(self.name, str)
@@ -160,6 +160,12 @@ class Zone(BaseModel):
         self.current_drones = []
         self.cost_to_next = 0
         self.cost_to_end = 0
+
+    def is_full(self) -> bool:
+        """
+        Check if the zone is full
+        """
+        return len(self.current_drones) >= self.max_drones
 
     def __repr__(self) -> str:
         """

@@ -9,6 +9,7 @@ from classes.graph import Graph
 from core.A_star import a_star
 
 from core.global_manager import global_manager
+from visualisation.visualisation import visualise
 
 
 def main():
@@ -23,31 +24,29 @@ def main():
             return
         print("Infos from parser:\n")
         for item, value in infos.items():
-            if item not in ("connection", "hub"):
+            if item not in ("hub"):
                 print(item)
                 print(value)
                 print("\n")
 
         for hub in [infos["start_hub"], infos["end_hub"]] + infos["hubs"]:
-            if hub is not None:
-                zone = Zone.from_cords(
-                    name=hub["name"],
-                    cords=(hub["x"], hub["y"]),
-                    zone_type=hub.get("zone", "normal"),
-                    color=hub.get("color", "none"),
-                    max_drones=hub.get("max_drones", 1),
-                )
-                graph.add_zone(zone)
-                if hub == infos["start_hub"]:
-                    graph.start_hub = zone
-                if hub == infos["end_hub"]:
-                    graph.end_hub = zone
+            zone = Zone.from_cords(
+                name=hub["name"],
+                cords=(hub["x"], hub["y"]),
+                zone_type=hub.get("zone", "normal"),
+                color=hub.get("color", "none"),
+                max_drones=hub.get("max_drones", 1),
+            )
+            graph.add_zone(zone)
+            if hub == infos["start_hub"]:
+                graph.start_hub = zone
+            if hub == infos["end_hub"]:
+                graph.end_hub = zone
 
         for connection in infos["connections"]:
             co = Connexion.create(
                 connection["from"],
-                connection["to"],
-                connection["max_link_capacity"]
+                connection["to"]
             )
             graph.add_connection(co)
         print("\nGraph infos\n")
@@ -55,8 +54,10 @@ def main():
         print("\n")
         print(graph.adjacency)
         print("\n")
-        print(graph.link_capacity)
+        print(graph.zones_capacity)
 
+        assert graph.start_hub is not None, "start_hub should not be None"
+        assert graph.end_hub is not None, "end_hub should not be None"
         start = graph.start_hub
         goal = graph.end_hub
         path = a_star(graph, start, goal)
@@ -72,11 +73,14 @@ def main():
         print(f"\ncreated drones supposed {infos["nb_drones"]}:")
         for drone in graph.drones:
             print(drone)
-        turns = global_manager(graph)
-        if all(drone.finish for drone in graph.drones):
+        from copy import deepcopy
+        graph2 = deepcopy(graph)
+        turns, steps = global_manager(graph2)
+        if all(drone.finish for drone in graph2.drones):
             print(f"All the drones made it to the goal in {turns} moves !!")
         else:
             print("Certains drones n'ont pas atteint le goal.")
+        visualise(graph2, steps)
     except Exception as e:
         print(f"ERROR: {e}")
 

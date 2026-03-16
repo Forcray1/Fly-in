@@ -17,12 +17,13 @@ def a_star(graph: Graph, start: Zone, goal: Zone) -> Optional[List[str]]:
     closed_set = set()
 
     while open_set:
-        priority_zones = [item for item in open_set if
-                          graph.zones[item[0]].zone_type == "priority"]
+        priority_zones = [(zone_name, score) for (zone_name, score) in open_set
+                          if graph.zones[zone_name].zone_type == "priority"]
         if priority_zones:
-            current, _ = min(priority_zones, key=lambda x: f_score[x[0]])
+            current_tuple = min(priority_zones, key=lambda x: f_score[x[0]])
         else:
-            current, _ = min(open_set, key=lambda x: f_score[x[0]])
+            current_tuple = min(open_set, key=lambda x: f_score[x[0]])
+        current = current_tuple[0]
         open_set = [item for item in open_set if item[0] != current]
         if current == goal.name:
             return reconstruct_path(came_from, current)
@@ -33,10 +34,7 @@ def a_star(graph: Graph, start: Zone, goal: Zone) -> Optional[List[str]]:
             zone_obj = graph.zones[neighbor]
             if zone_obj.zone_type == "blocked":
                 continue
-            cap = graph.link_capacity.get((current, neighbor))
-            if cap is None:
-                cap = graph.link_capacity.get((neighbor, current))
-            if cap is not None and cap <= 0:
+            if zone_obj.is_full():
                 continue
             if neighbor != goal.name and len(get_neighbors(graph,
                                                            neighbor)) == 1:
@@ -87,13 +85,10 @@ def cost(graph: Graph, from_zone: str, to_zone: str) -> float:
     Return the cost of moving from from_zone to to_zone
     (e.g., based on link capacity, zone type, etc.).
     """
-    cap = graph.link_capacity.get((from_zone, to_zone))
-    if cap is None:
-        cap = graph.link_capacity.get((to_zone, from_zone))
-    if cap is None or cap <= 0:
-        return float('inf')
     zone = graph.zones[to_zone]
-    base_cost = 1 / cap
+    if zone.is_full():
+        return float('inf')
+    base_cost = 1.0
     if zone.zone_type == "restricted":
         base_cost *= 2
     return base_cost

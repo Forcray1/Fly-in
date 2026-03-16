@@ -1,6 +1,8 @@
 Programme marche mais optimisable (44 pour le challenge, perfect path sur tout les easy et medium, manque le perfect pour hard et challenge)
 
-Ajouter la visualisation et le makefile sur les pc de 42 parce que les miens sont horrible pour dl pygame
+Apres reverif, algo faux, il ne prend pas en compte les specifite des zones, et attend malgrer une zone de libre ce qui fais echouer sur le 01, et rajoute des tours en plus pour presaue tout les autres
+
+Ajouter le makefile sur les pc de 42 parce que les miens sont horrible pour dl pygame
 
 re-tester tout une fois que l'animation est finie
 

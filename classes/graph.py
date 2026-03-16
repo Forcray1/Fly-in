@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, Set, Tuple
+from typing import Dict, Set, Optional
 
 from classes.connexion import Connexion
 from classes.zone import Zone
@@ -14,10 +14,10 @@ class Graph:
 
     def __init__(self) -> None:
         self.zones: Dict[str, Zone] = {}
-        self.start_hub: Zone = None
-        self.end_hub: Zone = None
+        self.start_hub: Optional[Zone] = None
+        self.end_hub: Optional[Zone] = None
         self.adjacency: Dict[str, Set[str]] = defaultdict(set)
-        self.link_capacity: Dict[Tuple[str, str], int] = {}
+        self.zones_capacity: Dict[str, int] = {}
         self.drones: list[Drone] = []
 
     def add_zone(self, zone) -> None:
@@ -28,6 +28,7 @@ class Graph:
         if not isinstance(zone, Zone):
             raise TypeError("zone must be a Zone instance")
         self.zones[zone.name] = zone
+        self.zones_capacity[zone.name] = zone.max_drones
 
     def add_connection(self,
                        connexion: Connexion
@@ -40,8 +41,6 @@ class Graph:
             raise ValueError("Connection references an unknown zone")
         self.adjacency[connexion.zone_a].add(connexion.zone_b)
         self.adjacency[connexion.zone_b].add(connexion.zone_a)
-        self.link_capacity[(connexion.zone_a,
-                            connexion.zone_b)] = connexion.max_link_capacity
 
     def neighbors(self, zone_name: str) -> Set[str]:
         """
