@@ -1,3 +1,0 @@
-Modifier le makefile sur les pc de 42 parce que les miens sont horrible
-
-verifier toute les douilles possible sur la config de base
