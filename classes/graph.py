@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, Set, Optional
+from typing import Dict, Set, Optional, List, Tuple
 
 from classes.connexion import Connexion
 from classes.zone import Zone
@@ -18,21 +18,19 @@ class Graph:
         self.end_hub: Optional[Zone] = None
         self.adjacency: Dict[str, Set[str]] = defaultdict(set)
         self.zones_capacity: Dict[str, int] = {}
-        self.drones: list[Drone] = []
+        self.drones: List[Drone] = []
+        self.connections_data: Dict[Tuple[str, ...], int] = {}
 
-    def add_zone(self, zone) -> None:
+    def add_zone(self, zone: Zone) -> None:
         """
         Register a new zone by name.
         """
-        from classes.zone import Zone
         if not isinstance(zone, Zone):
             raise TypeError("zone must be a Zone instance")
         self.zones[zone.name] = zone
         self.zones_capacity[zone.name] = zone.max_drones
 
-    def add_connection(self,
-                       connexion: Connexion
-                       ) -> None:
+    def add_connection(self, connexion: Connexion) -> None:
         """
         Add a bidirectional connection between two known zones.
         """

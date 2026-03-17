@@ -17,7 +17,12 @@ class SimulationManager:
         """
         Run the simulation and return (number_of_turns, list_of_steps).
         """
-        steps = []
+        steps: List[Any] = []
+
+        start_hub = self.graph.start_hub
+        end_hub = self.graph.end_hub
+        if start_hub is None or end_hub is None:
+            return self.turns, steps
 
         steps.append(deepcopy(self.graph.drones))
 
@@ -36,12 +41,15 @@ class SimulationManager:
                     drone.turns_to_arrival -= 1
                     if drone.turns_to_arrival == 0:
                         dest_name = drone.in_transit_to
-                        dest_zone = self.graph.get_zone(dest_name)
-                        drone.current_zone = dest_zone
-                        dest_zone.add_drone(drone)
-                        turn_movements.append(f"D{drone.drone_id}-{dest_name}")
-                        if dest_name == self.graph.end_hub.name:
-                            drone.finish = True
+                        if dest_name is not None:
+                            dest_zone = self.graph.get_zone(dest_name)
+                            drone.current_zone = dest_zone
+                            dest_zone.add_drone(drone)
+                            turn_movements.append(
+                                f"D{drone.drone_id}-{dest_name}"
+                            )
+                            if dest_name == end_hub.name:
+                                drone.finish = True
                         drone.in_transit_to = None
 
             # 2. Planning and Movement
@@ -53,29 +61,30 @@ class SimulationManager:
             active_drones.sort(key=lambda d: len(
                 a_star(
                     self.graph, d.current_zone,
-                    self.graph.end_hub, self.global_occ
+                    end_hub, self.global_occ
                 ) or []
             ))
 
             for drone in active_drones:
                 path = a_star(
                     self.graph, drone.current_zone,
-                    self.graph.end_hub, self.global_occ
+                    end_hub, self.global_occ
                 )
                 if not path or len(path) < 2:
                     continue
 
                 next_name = path[1]
                 next_zone = self.graph.get_zone(next_name)
-                link_key = tuple(sorted([drone.current_zone.name, next_name]))
+
+                sorted_link = sorted([drone.current_zone.name, next_name])
+                link_key: Tuple[str, str] = (sorted_link[0], sorted_link[1])
 
                 # Capacity check
-                conn_data = getattr(self.graph, 'connections_data', {})
-                conn_cap = conn_data.get(link_key, 1)
+                conn_cap = self.graph.connections_data.get(link_key, 1)
                 if res_links.get(link_key, 0) >= conn_cap:
                     continue
 
-                if next_name != self.graph.end_hub.name:
+                if next_name != end_hub.name:
                     count_in_zone = next_zone.get_drone_count()
                     res_in_zone = res_zones.get(next_name, 0)
                     if (count_in_zone + res_in_zone) >= next_zone.max_drones:
@@ -94,7 +103,7 @@ class SimulationManager:
                     drone.current_zone = next_zone
                     next_zone.add_drone(drone)
                     turn_movements.append(f"D{drone.drone_id}-{next_name}")
-                    if next_name == self.graph.end_hub.name:
+                    if next_name == end_hub.name:
                         drone.finish = True
 
             if turn_movements:

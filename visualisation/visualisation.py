@@ -157,7 +157,10 @@ def draw_drones(
     for drone in drones:
         transit_to = getattr(drone, 'in_transit_to', None)
         turns = getattr(drone, 'turns_to_arrival', 0)
-        z_name: str = transit_to if turns > 0 else drone.current_zone.name
+        if turns > 0 and transit_to is not None:
+            z_name: str = transit_to
+        else:
+            z_name = drone.current_zone.name
         d_by_z[z_name].append(drone)
 
     for zone_name, drones_list in d_by_z.items():

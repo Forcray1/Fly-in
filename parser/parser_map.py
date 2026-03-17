@@ -135,9 +135,11 @@ def _parse_hub(
     if "max_drones" in spec:
         try:
             max_drones = int(spec["max_drones"])
+            if max_drones < 1:
+                raise ValueError
         except ValueError as exc:
             raise SpecError(f"Line {line_no}: max_drones must "
-                            f"be an integer") from exc
+                            f"be a positive integer") from exc
         if max_drones <= 0:
             raise SpecError(f"Line {line_no}: max_drones must be > 0")
 
@@ -179,7 +181,7 @@ def _parse_connection(line_value: str, line_no: int) -> ConnectionData:
         try:
             max_link_capacity = int(spec["max_link_capacity"])
         except Exception:
-            max_link_capacity = None
+            raise SpecError(f"Line {line_no}: unsupported connection")
     nb_drones = None
     import inspect
     frame = inspect.currentframe()
@@ -193,6 +195,10 @@ def _parse_connection(line_value: str, line_no: int) -> ConnectionData:
             nb_drones = int(nb_drones)
         except Exception:
             nb_drones = 1
+    if max_link_capacity is not None:
+        if int(max_link_capacity) < 1:
+            raise ValueError(f"{max_link_capacity} is not a valid value "
+                             f"for line {line_no}")
     if (
         max_link_capacity is None
         or (nb_drones is not None and max_link_capacity < nb_drones)

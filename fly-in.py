@@ -24,13 +24,11 @@ def main() -> None:
     config = sys.argv[1]
 
     try:
-        # Parsing and Validation
         infos: Dict[str, Any] = parser(config)
         if not check_value(infos):
             print("ERROR: Invalid map values.")
             return
 
-        # Zones creation
         all_hubs = [infos["start_hub"], infos["end_hub"]] + infos["hubs"]
         for hub in all_hubs:
             zone = Zone.from_cords(
@@ -46,7 +44,10 @@ def main() -> None:
             if hub == infos["end_hub"]:
                 graph.end_hub = zone
 
-        # Cconnexions creation
+        if graph.start_hub is None or graph.end_hub is None:
+            print("ERROR: Start or End hub not found in configuration.")
+            return
+
         graph.connections_data = {}
         for connection in infos["connections"]:
             max_cap = int(connection["max_link_capacity"])
@@ -58,25 +59,22 @@ def main() -> None:
             graph.add_connection(co)
 
             link_key = tuple(sorted([connection["from_"], connection["to"]]))
-            graph.connections_data[link_key] = max_cap  # type: ignore
+            graph.connections_data[link_key] = max_cap
 
-        # Drones initialisation
         nb_drones = int(infos["nb_drones"])
         for d_id in range(1, nb_drones + 1):
             drone = Drone(drone_id=d_id, current_zone=graph.start_hub)
             graph.drones.append(drone)
             graph.start_hub.current_drones.append(drone)
 
-        # Start of simulation
         graph_sim = deepcopy(graph)
-
         turns, steps = global_manager(graph_sim)
 
         if all(drone.finish for drone in graph_sim.drones):
             msg = f"SUCCESS: All drones reached the goal in {turns} turns."
         else:
-            msg = f"FAILURE: Simulation ended after {turns} "\
-                  f"turns (Incomplete)."
+            msg = f"FAILURE: Simulation ended after "\
+                  f"{turns} turns (Incomplete)."
         print(msg)
 
         visualise(graph, steps)

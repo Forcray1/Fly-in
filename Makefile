@@ -2,7 +2,7 @@ NAME        = fly-in.py
 VENV        = .venv
 PYTHON      = $(VENV)/bin/python3
 PIP         = $(VENV)/bin/pip
-MAP         = maps/easy/01_linear_path.txt
+MAP         = map_exemple.txt
 
 GREEN       = \033[0;32m
 RED         = \033[0;31m
@@ -11,7 +11,7 @@ RESET       = \033[0m
 all: $(VENV)
 	@echo "$(GREEN)Simulation ready.$(RESET)"
 
-$(VENV): requirements.txt
+install: requirements.txt
 	@echo "$(GREEN)Creating Virtual Environment...$(RESET)"
 	python3 -m venv $(VENV)
 	$(PIP) install --upgrade pip
@@ -25,8 +25,8 @@ debug: all
 
 lint: all
 	@echo "$(GREEN)Running Flake8 and Mypy...$(RESET)"
-	$(PYTHON) -m flake8 .
-	$(PYTHON) -m mypy . --ignore-missing-imports --disallow-untyped-defs
+	$(PYTHON) -m flake8 classes core parser visualisation fly-in.py
+	$(PYTHON) -m mypy classes core parser visualisation fly-in.py
 
 clean:
 	@echo "$(RED)Cleaning python caches...$(RESET)"
@@ -40,7 +40,8 @@ fclean: clean
 	rm -rf $(VENV)
 	rm -f uv.lock
 	rm -f data/output/function_calling_results.json
+	rm -rf .mypy_cache
 
 re: fclean all
 
-.PHONY: all run debug clean fclean lint re
+.PHONY: all run debug clean fclean lint re install
