@@ -4,12 +4,10 @@ import math
 from collections import defaultdict
 from typing import Dict, List, Tuple, Any
 
-# --- Constants ---
 WIDTH: int = 1600
 HEIGHT: int = 1000
 DRONE_RADIUS: int = 8
 
-# Colors Palette
 DEFAULT_COLORS: Dict[str, Tuple[int, int, int]] = {
     "start": (46, 204, 113),
     "end": (231, 76, 60),

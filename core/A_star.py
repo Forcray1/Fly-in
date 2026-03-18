@@ -41,7 +41,6 @@ def a_star(
     f_score[start.name] = heuristic(start, goal)
 
     while open_set:
-        # Selection of lowest f-node
         current_name = min(open_set, key=lambda n: f_score[n])
 
         if current_name == goal.name:
@@ -55,7 +54,6 @@ def a_star(
             if neighbor_zone.zone_type == "blocked":
                 continue
 
-            # Base cost
             if neighbor_zone.zone_type == "restricted":
                 move_cost = 2.0
             elif neighbor_zone.zone_type == "priority":

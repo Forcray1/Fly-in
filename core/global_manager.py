@@ -35,7 +35,7 @@ class SimulationManager:
             res_zones: Dict[str, int] = {}
             res_links: Dict[Tuple[str, str], int] = {}
 
-            # 1. Arrival of drones in transit (Restricted management)
+            # Arrival of drones in transit (Restricted management)
             for drone in self.graph.drones:
                 if not drone.finish and drone.turns_to_arrival > 0:
                     drone.turns_to_arrival -= 1
@@ -52,7 +52,7 @@ class SimulationManager:
                                 drone.finish = True
                         drone.in_transit_to = None
 
-            # 2. Planning and Movement
+            # Planning and Movement
             active_drones = [
                 d for d in self.graph.drones
                 if not d.finish and d.turns_to_arrival == 0
